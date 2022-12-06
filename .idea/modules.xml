@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.metadata/.plugins/org.eclipse.egit.core/.org.eclipse.egit.core.cmp/.org.eclipse.egit.core.cmp.iml" filepath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.egit.core/.org.eclipse.egit.core.cmp/.org.eclipse.egit.core.cmp.iml" />
+      <module fileurl="file://$PROJECT_DIR$/JavaGameClient/JavaGameClient.iml" filepath="$PROJECT_DIR$/JavaGameClient/JavaGameClient.iml" />
+      <module fileurl="file://$PROJECT_DIR$/JavaGameClient2/JavaGameClient2.iml" filepath="$PROJECT_DIR$/JavaGameClient2/JavaGameClient2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/JavaGameServer/JavaGameServer.iml" filepath="$PROJECT_DIR$/JavaGameServer/JavaGameServer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/YScramble-1player/YScramble-1player.iml" filepath="$PROJECT_DIR$/YScramble-1player/YScramble-1player.iml" />
+    </modules>
+  </component>
+</project>
