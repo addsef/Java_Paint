@@ -14,10 +14,15 @@ class ChatMsg implements Serializable {
 	public MouseEvent mouse_e;
 	public int pen_size; // pen size
 	public Color pen_color;
+	public String shape_type;
+	public String mouse_type;
 
 	public ChatMsg(String UserName, String code, String msg) {
 		this.code = code;
 		this.UserName = UserName;
 		this.data = msg;
+
+		this.mouse_type = "";
+		this.shape_type = "free";
 	}
 }

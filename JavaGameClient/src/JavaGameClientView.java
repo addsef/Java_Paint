@@ -20,21 +20,10 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.SwingConstants;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.LineBorder;
-import javax.swing.JToggleButton;
-import javax.swing.JList;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
@@ -74,20 +63,30 @@ public class JavaGameClientView extends JFrame {
 	private int pen_size = 2; // minimum 2
 	// 그려진 Image를 보관하는 용도, paint() 함수에서 이용한다.
 	private Image panelImage = null; 
-	private Graphics gc2 = null;
+	private Graphics2D gc2 = null;
+	private Image forShapeImage;
+	private Graphics2D gc3 = null;
+	private JLabel PenSize;
 
-	private Point point;
-	private Color pen_color = Color.BLACK ;// default pen color : Black 
+	private Point oldPoint;
+	private Point pressedPoint;
+	private Point pressedPointforLine;
+
+	private String shape_type = "free";
+	private Color pen_color = Color.BLACK ;// default pen color : Black
+
+	private JButton btnRedChange;
+	private JButton btnGreenChange;
+	private JButton btnBlueChange;
+	private JButton btnBlackChange;
+	
 	private ImageIcon free_drawing = new ImageIcon(JavaGameClientView.class.getResource("/btnimage/drawing.png"));
 	private ImageIcon rect_drawing = new ImageIcon(JavaGameClientView.class.getResource("/btnimage/rect.png"));
 	private ImageIcon fill_rect_drawing = new ImageIcon(JavaGameClientView.class.getResource("/btnimage/rect-fill.png"));
 	private ImageIcon oval_drawing = new ImageIcon(JavaGameClientView.class.getResource("/btnimage/oval.png"));
 	private ImageIcon fill_oval_drawing = new ImageIcon(JavaGameClientView.class.getResource("/btnimage/oval-fill.png"));
 	private ImageIcon line_drawing = new ImageIcon(JavaGameClientView.class.getResource("/btnimage/line.png"));
-	/**
-	 * Create the frame.
-	 * @throws BadLocationException 
-	 */
+
 	public JavaGameClientView(String username, String ip_addr, String port_no)  {
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -155,12 +154,15 @@ public class JavaGameClientView extends JFrame {
 		
 		// Image 영역 보관용. paint() 에서 이용한다.
 		panelImage = createImage(panel.getWidth(), panel.getHeight());
-		gc2 = panelImage.getGraphics();
-		gc2.setColor(panel.getBackground());
+		gc2 = (Graphics2D) panelImage.getGraphics();
+		gc2.setColor(Color.WHITE);
 		gc2.fillRect(0,0, panel.getWidth(),  panel.getHeight());
-		gc2.setColor(pen_color);  
-		gc2.drawRect(0,0, panel.getWidth()-1,  panel.getHeight()-1);
-		
+
+		forShapeImage = createImage(panel.getWidth(), panel.getHeight());
+		gc3 = (Graphics2D) forShapeImage.getGraphics();
+		gc3.setColor(Color.WHITE);
+		gc3.fillRect(0,0, panel.getWidth(),  panel.getHeight());
+
 		lblMouseEvent = new JLabel("<dynamic>");
 		lblMouseEvent.setHorizontalAlignment(SwingConstants.CENTER);
 		lblMouseEvent.setFont(new Font("굴림", Font.BOLD, 14));
@@ -169,23 +171,31 @@ public class JavaGameClientView extends JFrame {
 		lblMouseEvent.setBounds(376, 488, 400, 40);
 		contentPane.add(lblMouseEvent);
 		
-		JButton btnRedChange = new JButton("RED"); // 펜 색깔이 RED로  RED = 255, 0, 0 => setColor(RED)
+		btnRedChange = new JButton("RED"); // 펜 색깔이 RED로  RED = 255, 0, 0 => setColor(RED)
 		btnRedChange.setBounds(376, 539, 70, 40);
+		btnRedChange.setForeground(Color.RED);
+		btnRedChange.setFont(new Font("굴림", Font.BOLD, 14));
 		contentPane.add(btnRedChange);
 		btnRedChange.addActionListener(new BtnColorChange(Color.RED, btnRedChange));
 		
-		JButton btnGreenChange = new JButton("GREEN");  // 펜 색깔이 GREEEN GREEN = 
+		btnGreenChange = new JButton("GREEN");  // 펜 색깔이 GREEEN GREEN =
 		btnGreenChange.setBounds(464, 540, 70, 40);
+		btnGreenChange.setForeground(Color.GREEN);
+		btnGreenChange.setFont(new Font("굴림", Font.BOLD, 14));
 		contentPane.add(btnGreenChange);
 		btnGreenChange.addActionListener(new BtnColorChange(Color.GREEN, btnGreenChange));
 		
-		JButton btnBlueChange = new JButton("BLUE"); // 펜 색깔이 BULE = 
+		btnBlueChange = new JButton("BLUE"); // 펜 색깔이 BULE =
 		btnBlueChange.setBounds(546, 539, 70, 40);
+		btnBlueChange.setForeground(Color.BLUE);
+		btnBlueChange.setFont(new Font("굴림", Font.BOLD, 14));
 		contentPane.add(btnBlueChange);
 		btnBlueChange.addActionListener(new BtnColorChange(Color.BLUE, btnBlueChange));
 		
-		JButton btnBlackChange = new JButton("BLACK"); // 펜 색깔이 BLACK  default Color = black 
+		btnBlackChange = new JButton("BLACK"); // 펜 색깔이 BLACK  default Color = black
 		btnBlackChange.setBounds(628, 539, 70, 40);
+		btnBlackChange.setForeground(Color.BLACK);
+		btnBlackChange.setFont(new Font("굴림", Font.BOLD, 14));
 		contentPane.add(btnBlackChange);
 		btnBlackChange.addActionListener(new BtnColorChange(Color.BLACK, btnBlackChange));
 		
@@ -195,6 +205,7 @@ public class JavaGameClientView extends JFrame {
 		btnFreeDrawing.setContentAreaFilled(false);
 		btnFreeDrawing.setFocusPainted(true);
 		contentPane.add(btnFreeDrawing);
+		btnFreeDrawing.addActionListener(new BtnShapeChange(btnFreeDrawing, "free"));
 		
 		JButton btnRectDrawing = new JButton(rect_drawing); // Draw Rectangle
 		btnRectDrawing.setBounds(70, 540, 40, 40);
@@ -202,6 +213,7 @@ public class JavaGameClientView extends JFrame {
 		btnRectDrawing.setContentAreaFilled(false);
 		btnRectDrawing.setFocusPainted(true);
 		contentPane.add(btnRectDrawing);
+		btnRectDrawing.addActionListener(new BtnShapeChange(btnRectDrawing, "rect"));
 		
 		JButton btnFillRectDrawing = new JButton(fill_rect_drawing); // Draw Fill Rectangle
 		btnFillRectDrawing.setBounds(130, 540, 40, 40);
@@ -209,6 +221,7 @@ public class JavaGameClientView extends JFrame {
 		btnFillRectDrawing.setContentAreaFilled(false);
 		btnFillRectDrawing.setFocusPainted(true);
 		contentPane.add(btnFillRectDrawing);
+		btnFillRectDrawing.addActionListener(new BtnShapeChange(btnFillRectDrawing, "fillrect"));
 		
 		JButton btnOvalDrawing = new JButton(oval_drawing); // Draw Oval
 		btnOvalDrawing.setBounds(190, 540, 40, 40);
@@ -216,6 +229,7 @@ public class JavaGameClientView extends JFrame {
 		btnOvalDrawing.setFocusPainted(true);
 		btnOvalDrawing.setContentAreaFilled(false);
 		contentPane.add(btnOvalDrawing);
+		btnOvalDrawing.addActionListener(new BtnShapeChange(btnOvalDrawing, "oval"));
 		
 		JButton btnFillOvalDrawing = new JButton(fill_oval_drawing); // Draw Fil Oval
 		btnFillOvalDrawing.setBounds(250, 540, 40, 40);
@@ -223,14 +237,15 @@ public class JavaGameClientView extends JFrame {
 		btnFillOvalDrawing.setContentAreaFilled(false);
 		btnFillOvalDrawing.setFocusPainted(true);
 		contentPane.add(btnFillOvalDrawing);
+		btnFillOvalDrawing.addActionListener(new BtnShapeChange(btnFillOvalDrawing, "filloval"));
 		
 		JButton btnLineDrawing = new JButton(line_drawing); // Draw Line
 		btnLineDrawing.setBounds(310, 540, 40, 40);
 		btnLineDrawing.setBorderPainted(false);
 		btnLineDrawing.setContentAreaFilled(false);
 		btnLineDrawing.setFocusPainted(true);
-		
 		contentPane.add(btnLineDrawing);
+		btnLineDrawing.addActionListener(new BtnShapeChange(btnLineDrawing, "line"));
 		
 		JButton btnAllClear = new JButton("CLEAR"); // panelimage 지우기
 		btnAllClear.setBounds(213, 477, 70, 40);
@@ -238,18 +253,14 @@ public class JavaGameClientView extends JFrame {
 		btnAllClear.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				gc2.clearRect(0,0,panel.getWidth(),panel.getHeight());
-				gc2.setColor(panel.getBackground());
-				gc2.fillRect(0,0, panel.getWidth(),  panel.getHeight());
-				gc2.setColor(pen_color);
-				gc2.drawRect(0,0, panel.getWidth()-1,  panel.getHeight()-1);
-				panel.repaint();
+				ChatMsg cm = new ChatMsg(UserName, "800", "clear");
+				SendObject(cm);
 			}
 		});
 
-		JButton btnNewButton_11 = new JButton("PEN = 2"); // set pan size   --> JLabel로 해서 server로부터 pen size 받기 
-		btnNewButton_11.setBounds(710, 539, 70, 40);
-		contentPane.add(btnNewButton_11);
+		PenSize = new JLabel("PEN = 2"); // set pan size   --> JLabel로 해서 server로부터 pen size 받기 
+		PenSize.setBounds(710, 539, 70, 40);
+		contentPane.add(PenSize);
 
 
 		try {
@@ -293,7 +304,6 @@ public class JavaGameClientView extends JFrame {
 
 	public void paint(Graphics g) {  // 
 		super.paint(g);
-		// Image 영역이 가려졌다 다시 나타날 때 그려준다.
 		gc.drawImage(panelImage, 0, 0, this);
 	}
 	
@@ -309,23 +319,69 @@ public class JavaGameClientView extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			// TODO Auto-generated method stub
-			ChatMsg cm = new ChatMsg(UserName, "600", "color change");
+			ChatMsg cm = new ChatMsg(UserName, "600", "color change"); // 600
 			cm.pen_color = color;
 			SendObject(cm); 
 		}
 	}
+	
 	// server로부터 설정된 pen color set    color = cm.pen_color
 	public void revColor(Color color) {
 		pen_color = color;
 	}
 
 	class BtnShapeChange implements ActionListener {
-		JButton btn; // shpae btn ex) freedrawing, Rectdrawing, ...
-		String shape; // shape type ex) free, rect, fill_rect, ...
-
+		JButton btn;
+		String shape_type;
+		public BtnShapeChange(JButton b, String shape) {
+			btn = b;
+			this.shape_type = shape;
+		}
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			ChatMsg cm = new ChatMsg(UserName, "700", "Change Shape"); // 700
+			cm.shape_type = this.shape_type;
+			SendObject(cm);
+		}
+	}
 
+	public void revShape(String shape) {
+		shape_type = shape; // default shape type = free drawing
+	}
+	
+	public void clearPanel() {
+		gc2.clearRect(0,0,panel.getWidth(),panel.getHeight());
+		gc2.setColor(Color.WHITE);
+		gc2.fillRect(0,0, panel.getWidth(),  panel.getHeight());
+		gc3.clearRect(0, 0, panel.getWidth(), panel.getHeight());
+		gc3.setColor(Color.WHITE);
+		gc3.drawRect(0,0, panel.getWidth(),  panel.getHeight());
+		panel.repaint(); 
+	}
+
+	public void receiveDrawingEvent(ChatMsg cm) {
+		pen_size = cm.pen_size;
+		gc2.setColor(cm.pen_color);
+
+		switch(cm.shape_type) {
+			case "free":
+				freeDrawing(cm);
+				break;
+			case "rect":
+				shapeDrawing(cm);
+				break;
+			case "oval":
+				shapeDrawing(cm);
+				break;
+			case "line":
+				shapeDrawing(cm);
+				break;
+			case "fillrect":
+				shapeDrawing(cm);
+				break;
+			case "filloval":
+				shapeDrawing(cm);
+				break;
 		}
 	}
 	
@@ -334,7 +390,6 @@ public class JavaGameClientView extends JFrame {
 		public void run() {
 			while (true) {
 				try {
-
 					Object obcm = null;
 					String msg = null;
 					ChatMsg cm;
@@ -366,11 +421,18 @@ public class JavaGameClientView extends JFrame {
 							AppendText("[" + cm.UserName + "]");
 						AppendImage(cm.img);
 					case "500": // Mouse Event 수신
-						DoMouseEvent(cm);
+						receiveDrawingEvent(cm);
 						break;
 					case "600": // change pen color
 						 revColor(cm.pen_color);
 						break;
+						case "700":
+							revShape(cm.shape_type);
+							break;
+						case "800":		
+							clearPanel();
+							break;
+
 					}
 				} catch (IOException e) {
 					AppendText("ois.readObject() error");
@@ -391,6 +453,147 @@ public class JavaGameClientView extends JFrame {
 		}
 	}
 
+	public void freeDrawing(ChatMsg cm) {
+		MouseEvent e = cm.mouse_e;
+		if(cm.mouse_type.equals("pressed")) {
+			oldPoint = e.getPoint();
+		}
+		gc2.setColor(pen_color);
+		gc2.setStroke(new BasicStroke(cm.pen_size, BasicStroke.CAP_ROUND, 0));
+		gc2.drawLine((int)oldPoint.getX(), (int)oldPoint.getY(), e.getX(), e.getY());
+		gc.drawImage(panelImage, 0, 0, panel);
+		oldPoint = e.getPoint();
+		gc3.drawImage(panelImage, 0, 0, panel);
+	}
+
+	public void shapeDrawing(ChatMsg cm) {
+		MouseEvent e = cm.mouse_e;
+
+		switch(cm.mouse_type) {
+			case "dragged":
+				makeShape(pressedPoint, e.getPoint(), cm.shape_type);
+				break;
+			case "pressed":
+				gc3.drawImage(forShapeImage, 0, 0, panel);
+				pressedPoint = e.getPoint();
+				pressedPointforLine = e.getPoint();
+				break;
+			case "released":
+				makeShape(pressedPoint, e.getPoint(), cm.shape_type);
+				gc3.drawImage(panelImage, 0, 0, panel);
+				break;
+			case "clicked":
+				pressedPoint = e.getPoint();
+		}
+	}
+
+
+
+	public void sendDrawingEvent(MouseEvent e, String mouse_type, String shape) {
+		ChatMsg cm = new ChatMsg(UserName, "500", "DRAWING");
+		cm.mouse_e = e; // 좌표
+		cm.pen_size = pen_size;
+		cm.mouse_type = mouse_type;
+		cm.shape_type = shape;
+		SendObject(cm);
+	}
+
+	class MyMouseWheelEvent implements MouseWheelListener {
+		@Override
+		public void mouseWheelMoved(MouseWheelEvent e) {
+			// TODO Auto-generated method stub
+			if (e.getWheelRotation() < 0) { // 위로 올리는 경우 pen_size 증가
+				if (pen_size < 20)
+					pen_size++;
+			} else {
+				if (pen_size > 2)
+					pen_size--;
+			}
+			lblMouseEvent.setText("mouseWheelMoved Rotation=" + e.getWheelRotation()
+					+ " pen_size = " + pen_size + " " + e.getX() + "," + e.getY());
+			PenSize.setText("Pen : " + pen_size);
+		}
+
+	}
+	class MyMouseEvent implements MouseListener, MouseMotionListener {
+
+		@Override
+		public void mouseDragged(MouseEvent e) {
+			sendDrawingEvent(e, "dragged", shape_type);
+		}
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			sendDrawingEvent(e, "clicked", shape_type);
+		}
+		@Override
+		public void mousePressed(MouseEvent e) {
+			sendDrawingEvent(e, "pressed", shape_type);
+		}
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			switch(shape_type) {
+				case "rect":
+					sendDrawingEvent(e, "released", "rect");
+					break;
+				case "oval":
+					sendDrawingEvent(e, "released", "oval");
+					break;
+				case "line":
+					sendDrawingEvent(e, "released", "line");
+					break;
+				case "fillrect":
+					sendDrawingEvent(e, "released", "fillrect");
+					break;
+				case "filloval":
+					sendDrawingEvent(e, "released", "filloval");
+					break;
+			}
+		}
+
+		@Override
+		public void mouseMoved(MouseEvent e) {
+		}
+		@Override
+		public void mouseEntered(MouseEvent e) {
+		}
+		@Override
+		public void mouseExited(MouseEvent e) {
+		}
+	}
+
+	public void makeShape(Point pressedPoint, Point releasedPoint, String shape_type) {
+		int x = (int) Math.min(pressedPoint.getX(), releasedPoint.getX());
+		int y = (int) Math.min(pressedPoint.getY(), releasedPoint.getY());
+
+		int width = (int) Math.abs(pressedPoint.getX() - releasedPoint.getX());
+		int height = (int) Math.abs(pressedPoint.getY() - releasedPoint.getY());
+
+		gc2.drawImage(forShapeImage, 0, 0, panel);
+		gc2.setColor(pen_color);
+		gc2.setStroke(new BasicStroke(pen_size, BasicStroke.CAP_ROUND, 0));
+
+		switch(shape_type) {
+			case "rect":
+				gc2.drawRect(x, y, width, height);
+				break;
+			case "oval":
+				gc2.drawOval(x, y, width, height);
+				break;
+			case "line":
+				gc2.drawLine((int) pressedPointforLine.getX(), (int) pressedPointforLine.getY(),
+						(int) releasedPoint.getX(), (int) releasedPoint.getY());
+				break;
+			case "filloval":
+				gc2.fillOval(x, y, width, height);
+				break;
+			case "fillrect":
+				gc2.fillRect(x, y, width, height);
+				break;
+		}
+		gc.drawImage(panelImage, 0, 0, panel);
+	}
+
+	/*
 	// Mouse Event 수신 처리
 	public void DoMouseEvent(ChatMsg cm) {
 		if (cm.UserName.matches(UserName)) // 본인 것은 이미 Local 로 그렸다.
@@ -479,6 +682,8 @@ public class JavaGameClientView extends JFrame {
 
 		}
 	}
+	*/
+
 
 	// keyboard enter key 치면 서버로 전송
 	class TextSendAction implements ActionListener {
@@ -564,7 +769,7 @@ public class JavaGameClientView extends JFrame {
 		try {
 			doc.insertString(doc.getLength(),msg+"\n", right );
 		} catch (BadLocationException e) {
-			// TODO Auto-generated catch block
+			// TODO Auto-generated catch block 
 			e.printStackTrace();
 		}
 		int len = textArea.getDocument().getLength();
@@ -607,7 +812,8 @@ public class JavaGameClientView extends JFrame {
 		// ImageViewAction viewaction = new ImageViewAction();
 		// new_icon.addActionListener(viewaction); // 내부클래스로 액션 리스너를 상속받은 클래스로
 		// panelImage = ori_img.getScaledInstance(panel.getWidth(), panel.getHeight(), Image.SCALE_DEFAULT);
-
+		
+		
 		gc2.drawImage(ori_img,  0,  0, panel.getWidth(), panel.getHeight(), panel);
 		gc.drawImage(panelImage, 0, 0, panel.getWidth(), panel.getHeight(), panel);
 	}
